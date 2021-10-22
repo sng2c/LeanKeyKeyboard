@@ -17,6 +17,8 @@ import android.view.inputmethod.CompletionInfo;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import androidx.core.text.BidiFormatter;
+
+import com.gslump.ko_automata.ko_automata.KoreanAutomata;
 import com.liskovsoft.leankeyboard.ime.LeanbackKeyboardController.InputListener;
 import com.liskovsoft.leankeyboard.utils.LeanKeyPreferences;
 
@@ -37,6 +39,8 @@ public class LeanbackImeService extends KeyMapperImeService {
     private LeanbackSuggestionsFactory mSuggestionsFactory;
     public static final String COMMAND_RESTART = "restart";
     private boolean mForceShowKbd;
+    private KoreanAutomata koreanAutomata;
+    private KoreanAutomata.ComposingContext composingContext;
 
     @SuppressLint("HandlerLeak")
     private final Handler mHandler = new Handler() {
@@ -58,6 +62,8 @@ public class LeanbackImeService extends KeyMapperImeService {
         if (VERSION.SDK_INT < 21 && !enableHardwareAcceleration()) {
             Log.w("LbImeService", "Could not enable hardware acceleration");
         }
+        koreanAutomata = new KoreanAutomata();
+        composingContext =  new KoreanAutomata.ComposingContext();
     }
 
     @Override
@@ -100,6 +106,7 @@ public class LeanbackImeService extends KeyMapperImeService {
 
     private void handleTextEntry(final int type, final int keyCode, final CharSequence text) {
         final InputConnection connection = getCurrentInputConnection();
+        KoreanAutomata.Output output;
         if (connection != null) {
             boolean updateSuggestions;
             switch (type) {
@@ -113,7 +120,16 @@ public class LeanbackImeService extends KeyMapperImeService {
                         mEnterSpaceBeforeCommitting = false;
                     }
 
-                    connection.commitText(text, 1);
+                    output = koreanAutomata.type(composingContext, String.valueOf(text));
+                    if( output.getCommitted() != null) {
+                        connection.commitText(output.getCommitted(), 1);
+                    }
+                    if( output.getComposing() != null ){
+                        connection.setComposingText(output.getComposing(), 1);
+                    }else{
+                        connection.finishComposingText();
+                    }
+
                     updateSuggestions = true;
                     if (keyCode == LeanbackKeyboardView.ASCII_PERIOD) {
                         mEnterSpaceBeforeCommitting = true;
@@ -121,12 +137,25 @@ public class LeanbackImeService extends KeyMapperImeService {
                     break;
                 case InputListener.ENTRY_TYPE_BACKSPACE:
                     clearSuggestionsDelayed();
-                    connection.deleteSurroundingText(1, 0);
+                    if( composingContext.getStatePrefix() != KoreanAutomata.ComposingFsm.ComposingStatePrefix.INIT){
+                        output = koreanAutomata.typeBackspace(composingContext);
+                        if(output.getCommitted() != null) {
+                            connection.commitText(output.getCommitted(), 1);
+                        }
+                        if(output.getComposing() != null) {
+                            connection.setComposingText(output.getComposing(), 1);
+                        }else{
+                            connection.finishComposingText();
+                        }
+                    } else {
+                        connection.deleteSurroundingText(1, 0);
+                    }
                     mEnterSpaceBeforeCommitting = false;
                     updateSuggestions = true;
                     break;
                 case InputListener.ENTRY_TYPE_SUGGESTION:
                 case InputListener.ENTRY_TYPE_VOICE:
+                    composingContext.reset();
                     clearSuggestionsDelayed();
                     if (!mSuggestionsFactory.shouldSuggestionsAmend()) {
                         connection.deleteSurroundingText(LeanbackUtils.getCharLengthBeforeCursor(connection), LeanbackUtils.getCharLengthAfterCursor(connection));
