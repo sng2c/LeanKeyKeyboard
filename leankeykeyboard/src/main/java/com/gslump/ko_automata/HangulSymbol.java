@@ -1,4 +1,4 @@
-package com.gslump.ko_automata.ko_automata;
+package com.gslump.ko_automata;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -10,6 +10,7 @@ public class HangulSymbol {
     public final static Map<String, String> firstCombineMap = new HashMap<>();
     public final static Map<String, String> middleCombineMap = new HashMap<>();
     public final static Map<String, String> lastCombineMap = new HashMap<>();
+
     static {
         firstCodeMap.put("ㄱ", 0);
         firstCodeMap.put("ㄲ", 1);
@@ -128,17 +129,21 @@ public class HangulSymbol {
         lastCombineMap.put("ㄲ", "ㄲ");
         lastCombineMap.put("ㄴ", "ㄴ");
         lastCombineMap.put("ㄷ", "ㄷ");
+        lastCombineMap.put("ㄸ", "ㄸ");
         lastCombineMap.put("ㄹ", "ㄹ");
         lastCombineMap.put("ㅁ", "ㅁ");
         lastCombineMap.put("ㅂ", "ㅂ");
+        lastCombineMap.put("ㅃ", "ㅃ");
         lastCombineMap.put("ㅅ", "ㅅ");
         lastCombineMap.put("ㅆ", "ㅆ");
         lastCombineMap.put("ㅇ", "ㅇ");
         lastCombineMap.put("ㅈ", "ㅈ");
+        lastCombineMap.put("ㅉ", "ㅉ");
         lastCombineMap.put("ㅊ", "ㅊ");
         lastCombineMap.put("ㅋ", "ㅋ");
         lastCombineMap.put("ㅌ", "ㅌ");
         lastCombineMap.put("ㅍ", "ㅍ");
+        lastCombineMap.put("ㅎ", "ㅎ");
         lastCombineMap.put("ㄱㅅ", "ㄳ");
         lastCombineMap.put("ㄴㅈ", "ㄵ");
         lastCombineMap.put("ㄴㅎ", "ㄶ");
@@ -184,16 +189,21 @@ public class HangulSymbol {
         }
 
 
-        int codeFirst = HangulSymbol.firstCodeMap.getOrDefault(combinedFirst, -1);
-        int codeMiddle = HangulSymbol.middleCodeMap.getOrDefault(combinedMiddle, -1);
-        int codeLast = HangulSymbol.lastCodeMap.getOrDefault(combinedLast, -1);
-//        System.out.println(first + "," + combinedMiddle + "," + combinedLast);
+        Integer codeFirst = HangulSymbol.firstCodeMap.get(combinedFirst);
+        codeFirst = (codeFirst != null) ? codeFirst : -1;
+        Integer codeMiddle = HangulSymbol.middleCodeMap.get(combinedMiddle);
+        codeMiddle = (codeMiddle != null) ? codeMiddle : -1;
+        Integer codeLast = HangulSymbol.lastCodeMap.get(combinedLast);
+        codeLast = (codeLast != null) ? codeLast : -1;
 
-        if (codeFirst == -1 || codeMiddle == -1 || codeLast == -1 ){
+
+        if (codeFirst == -1 || codeMiddle == -1 || codeLast == -1) {
             return null;
         }
 
         char conjoined = (char) (0xAC00 + codeFirst * 28 * 21 + codeMiddle * 28 + codeLast);
+        System.out.println(codeFirst + "," + codeMiddle + "," + codeLast + " => "+ conjoined);
+        System.out.println(first + "," + combinedMiddle + "," + combinedLast + " => "+ conjoined);
         return String.valueOf(conjoined);
     }
 }

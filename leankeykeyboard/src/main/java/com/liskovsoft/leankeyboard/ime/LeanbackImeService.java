@@ -1,6 +1,7 @@
 package com.liskovsoft.leankeyboard.ime;
 
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.app.Service;
 import android.content.Intent;
 import android.inputmethodservice.InputMethodService;
@@ -16,9 +17,11 @@ import android.view.View;
 import android.view.inputmethod.CompletionInfo;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
+import android.widget.Toast;
+
 import androidx.core.text.BidiFormatter;
 
-import com.gslump.ko_automata.ko_automata.KoreanAutomata;
+import com.gslump.ko_automata.KoreanAutomata;
 import com.liskovsoft.leankeyboard.ime.LeanbackKeyboardController.InputListener;
 import com.liskovsoft.leankeyboard.utils.LeanKeyPreferences;
 
@@ -40,7 +43,6 @@ public class LeanbackImeService extends KeyMapperImeService {
     public static final String COMMAND_RESTART = "restart";
     private boolean mForceShowKbd;
     private KoreanAutomata koreanAutomata;
-    private KoreanAutomata.ComposingContext composingContext;
 
     @SuppressLint("HandlerLeak")
     private final Handler mHandler = new Handler() {
@@ -63,7 +65,6 @@ public class LeanbackImeService extends KeyMapperImeService {
             Log.w("LbImeService", "Could not enable hardware acceleration");
         }
         koreanAutomata = new KoreanAutomata();
-        composingContext =  new KoreanAutomata.ComposingContext();
     }
 
     @Override
@@ -93,6 +94,7 @@ public class LeanbackImeService extends KeyMapperImeService {
         if (mKeyboardController != null) {
             mKeyboardController.setSuggestionsEnabled(prefs.getSuggestionsEnabled());
         }
+        koreanAutomata.finish();
     }
 
     private void clearSuggestionsDelayed() {
@@ -104,6 +106,10 @@ public class LeanbackImeService extends KeyMapperImeService {
 
     }
 
+    private void toast(String a) {
+        Toast.makeText(getApplicationContext(), a, Toast.LENGTH_LONG).show();
+    }
+
     private void handleTextEntry(final int type, final int keyCode, final CharSequence text) {
         final InputConnection connection = getCurrentInputConnection();
         KoreanAutomata.Output output;
@@ -112,6 +118,7 @@ public class LeanbackImeService extends KeyMapperImeService {
             switch (type) {
                 case InputListener.ENTRY_TYPE_STRING:
                     clearSuggestionsDelayed();
+//                    toast("1-1");
                     if (mEnterSpaceBeforeCommitting && mKeyboardController.enableAutoEnterSpace()) {
                         if (LeanbackUtils.isAlphabet(keyCode)) {
                             connection.commitText(" ", 1);
@@ -119,17 +126,24 @@ public class LeanbackImeService extends KeyMapperImeService {
 
                         mEnterSpaceBeforeCommitting = false;
                     }
-
-                    output = koreanAutomata.type(composingContext, String.valueOf(text));
-                    if( output.getCommitted() != null) {
+//                    toast("1-2");
+                    output = koreanAutomata.type(String.valueOf(text));
+//                    toast("1-3");
+                    if (output.getCommitted() != null) {
+//                        toast("1-3-1");
                         connection.commitText(output.getCommitted(), 1);
                     }
-                    if( output.getComposing() != null ){
+//                    toast("1-4");
+                    if (output.getComposing() != null) {
+//                        toast("1-4-1");
                         connection.setComposingText(output.getComposing(), 1);
-                    }else{
+                    } else {
+//                        toast("1-4-2-1");
+                        connection.setComposingText("", 1);
+//                        toast("1-4-2-2");
                         connection.finishComposingText();
                     }
-
+//                    toast("1-5");
                     updateSuggestions = true;
                     if (keyCode == LeanbackKeyboardView.ASCII_PERIOD) {
                         mEnterSpaceBeforeCommitting = true;
@@ -137,14 +151,15 @@ public class LeanbackImeService extends KeyMapperImeService {
                     break;
                 case InputListener.ENTRY_TYPE_BACKSPACE:
                     clearSuggestionsDelayed();
-                    if( composingContext.getStatePrefix() != KoreanAutomata.ComposingFsm.ComposingStatePrefix.INIT){
-                        output = koreanAutomata.typeBackspace(composingContext);
-                        if(output.getCommitted() != null) {
-                            connection.commitText(output.getCommitted(), 1);
-                        }
-                        if(output.getComposing() != null) {
+                    if (koreanAutomata.isComposing()) {
+                        output = koreanAutomata.typeBackspace();
+//                        if(output.getCommitted() != null) {
+//                            connection.commitText(output.getCommitted(), 1);
+//                        }
+                        if (output.getComposing() != null) {
                             connection.setComposingText(output.getComposing(), 1);
-                        }else{
+                        } else {
+                            connection.setComposingText("", 1);
                             connection.finishComposingText();
                         }
                     } else {
@@ -155,7 +170,12 @@ public class LeanbackImeService extends KeyMapperImeService {
                     break;
                 case InputListener.ENTRY_TYPE_SUGGESTION:
                 case InputListener.ENTRY_TYPE_VOICE:
-                    composingContext.reset();
+
+                    output = koreanAutomata.finish();
+                    if (output.getCommitted() != null) {
+                        connection.commitText(output.getCommitted(), 1);
+                    }
+
                     clearSuggestionsDelayed();
                     if (!mSuggestionsFactory.shouldSuggestionsAmend()) {
                         connection.deleteSurroundingText(LeanbackUtils.getCharLengthBeforeCursor(connection), LeanbackUtils.getCharLengthAfterCursor(connection));
@@ -168,6 +188,11 @@ public class LeanbackImeService extends KeyMapperImeService {
                     connection.commitText(text, 1);
                     mEnterSpaceBeforeCommitting = true;
                 case InputListener.ENTRY_TYPE_ACTION:  // User presses Go, Send, Search etc
+                    output = koreanAutomata.finish();
+                    if (output.getCommitted() != null) {
+                        connection.commitText(output.getCommitted(), 1);
+                    }
+
                     boolean result = sendDefaultEditorAction(true);
 
                     if (result) {
@@ -180,6 +205,11 @@ public class LeanbackImeService extends KeyMapperImeService {
                     break;
                 case InputListener.ENTRY_TYPE_LEFT:
                 case InputListener.ENTRY_TYPE_RIGHT:
+                    output = koreanAutomata.finish();
+                    if (output.getCommitted() != null) {
+                        connection.commitText(output.getCommitted(), 1);
+                    }
+
                     BidiFormatter formatter = BidiFormatter.getInstance();
 
                     CharSequence textBeforeCursor = connection.getTextBeforeCursor(1000, 0);
@@ -245,14 +275,28 @@ public class LeanbackImeService extends KeyMapperImeService {
                     updateSuggestions = true;
                     break;
                 case InputListener.ENTRY_TYPE_DISMISS:
+                    output = koreanAutomata.finish();
+                    if (output.getCommitted() != null) {
+                        connection.commitText(output.getCommitted(), 1);
+                    }
+
                     connection.performEditorAction(EditorInfo.IME_ACTION_NONE);
                     updateSuggestions = false;
                     break;
                 case InputListener.ENTRY_TYPE_VOICE_DISMISS:
+                    output = koreanAutomata.finish();
+                    if (output.getCommitted() != null) {
+                        connection.commitText(output.getCommitted(), 1);
+                    }
+
                     connection.performEditorAction(EditorInfo.IME_ACTION_GO);
                     updateSuggestions = false;
                     break;
                 default:
+                    output = koreanAutomata.finish();
+                    if (output.getCommitted() != null) {
+                        connection.commitText(output.getCommitted(), 1);
+                    }
                     updateSuggestions = true;
             }
 
@@ -289,6 +333,7 @@ public class LeanbackImeService extends KeyMapperImeService {
     /**
      * At this point, decision whether to show kbd taking place<br/>
      * <a href="https://stackoverflow.com/questions/7449283/is-it-possible-to-have-both-physical-keyboard-and-soft-keyboard-active-at-the-sa">More info</a>
+     *
      * @return whether to show kbd
      */
     @Override
