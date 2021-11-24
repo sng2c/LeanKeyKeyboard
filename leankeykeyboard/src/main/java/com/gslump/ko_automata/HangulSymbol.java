@@ -10,6 +10,8 @@ public class HangulSymbol {
     public final static Map<String, String> firstCombineMap = new HashMap<>();
     public final static Map<String, String> middleCombineMap = new HashMap<>();
     public final static Map<String, String> lastCombineMap = new HashMap<>();
+    public final static Map<String, String> toUpperCase = new HashMap<>();
+    public final static Map<String, String> toLowerCase = new HashMap<>();
 
     static {
         firstCodeMap.put("ㄱ", 0);
@@ -155,6 +157,39 @@ public class HangulSymbol {
         lastCombineMap.put("ㄹㅍ", "ㄿ");
         lastCombineMap.put("ㄹㅎ", "ㅀ");
         lastCombineMap.put("ㅂㅅ", "ㅄ");
+
+        toUpperCase.put("ㅂ", "ㅃ");
+        toUpperCase.put("ㅈ", "ㅉ");
+        toUpperCase.put("ㄷ", "ㄸ");
+        toUpperCase.put("ㄱ", "ㄲ");
+        toUpperCase.put("ㅅ", "ㅆ");
+        toUpperCase.put("ㅐ", "ㅒ");
+        toUpperCase.put("ㅔ", "ㅖ");
+
+        toLowerCase.put("ㅃ", "ㅂ");
+        toLowerCase.put("ㅉ", "ㅈ");
+        toLowerCase.put("ㄸ", "ㄷ");
+        toLowerCase.put("ㄲ", "ㄱ");
+        toLowerCase.put("ㅆ", "ㅅ");
+        toLowerCase.put("ㅒ", "ㅐ");
+        toLowerCase.put("ㅖ", "ㅔ");
+
+    }
+
+    public static String toLowerCase(String chr) {
+        if (toLowerCase.containsKey(chr)) {
+            return toLowerCase.get(chr);
+        } else {
+            return chr;
+        }
+    }
+
+    public static String toUpperCase(String chr) {
+        if (toUpperCase.containsKey(chr)) {
+            return toUpperCase.get(chr);
+        } else {
+            return chr;
+        }
     }
 
     public static String compose(String first, String middle, String last) {
@@ -202,8 +237,8 @@ public class HangulSymbol {
         }
 
         char conjoined = (char) (0xAC00 + codeFirst * 28 * 21 + codeMiddle * 28 + codeLast);
-        System.out.println(codeFirst + "," + codeMiddle + "," + codeLast + " => "+ conjoined);
-        System.out.println(first + "," + combinedMiddle + "," + combinedLast + " => "+ conjoined);
+        System.out.println(codeFirst + "," + codeMiddle + "," + codeLast + " => " + conjoined);
+        System.out.println(first + "," + combinedMiddle + "," + combinedLast + " => " + conjoined);
         return String.valueOf(conjoined);
     }
 }
