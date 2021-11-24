@@ -19,11 +19,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
-
 import androidx.core.content.ContextCompat;
-
-import com.gslump.ko_automata.HangulSymbol;
-import com.gslump.ko_automata.KoreanAutomata;
 import com.liskovsoft.leankeyboard.utils.LeanKeyPreferences;
 import com.liskovsoft.leankeykeyboard.R;
 
@@ -109,24 +105,13 @@ public class LeanbackKeyboardView extends FrameLayout {
 
             String[] labels = splitLabels(label);
 
-            if (KoreanAutomata.ComposingContext.isHangulTyping(label.toString())) {
-                switch (charCase) {
-                    case LOWER_CASE:
-                        result = HangulSymbol.toLowerCase(label.toString());
-                        break;
-                    case UPPER_CASE:
-                        result = HangulSymbol.toUpperCase(label.toString());
-                        break;
-                }
-            } else {
-                switch (charCase) {
-                    case LOWER_CASE:
-                        result = labels != null ? labels[0] : label.toString().toLowerCase();
-                        break;
-                    case UPPER_CASE:
-                        result = labels != null ? labels[1] : label.toString().toUpperCase();
-                        break;
-                }
+            switch (charCase) {
+                case LOWER_CASE:
+                    result = labels != null ? labels[0] : label.toString().toLowerCase();
+                    break;
+                case UPPER_CASE:
+                    result = labels != null ? labels[1] : label.toString().toUpperCase();
+                    break;
             }
 
             keyHolder.key.label = result;
@@ -367,7 +352,6 @@ public class LeanbackKeyboardView extends FrameLayout {
      * Get index of the key under cursor
      * <br/>
      * Resulted index depends on the space key position
-     *
      * @param x x position
      * @param y y position
      * @return index of the key
@@ -535,9 +519,8 @@ public class LeanbackKeyboardView extends FrameLayout {
 
     /**
      * NOTE: Increase size of currently focused or clicked key
-     *
-     * @param index          index of the key
-     * @param clicked        key state
+     * @param index index of the key
+     * @param clicked key state
      * @param showFocusScale increase size
      */
     public void setFocus(final int index, final boolean clicked, final boolean showFocusScale) {
@@ -564,15 +547,15 @@ public class LeanbackKeyboardView extends FrameLayout {
 
                 if (mCurrentFocusView != null) {
                     mCurrentFocusView.animate()
-                            .scaleX(scale)
-                            .scaleY(scale)
-                            .setInterpolator(LeanbackKeyboardContainer.sMovementInterpolator)
-                            .setStartDelay(mUnfocusStartDelay);
+                                     .scaleX(scale)
+                                     .scaleY(scale)
+                                     .setInterpolator(LeanbackKeyboardContainer.sMovementInterpolator)
+                                     .setStartDelay(mUnfocusStartDelay);
 
                     mCurrentFocusView.animate()
-                            .setDuration(mClickAnimDur)
-                            .setInterpolator(LeanbackKeyboardContainer.sMovementInterpolator)
-                            .setStartDelay(mUnfocusStartDelay);
+                                     .setDuration(mClickAnimDur)
+                                     .setInterpolator(LeanbackKeyboardContainer.sMovementInterpolator)
+                                     .setStartDelay(mUnfocusStartDelay);
                 }
 
                 if (indexFull != -1) {
@@ -584,11 +567,11 @@ public class LeanbackKeyboardView extends FrameLayout {
 
                     mCurrentFocusView = mKeyImageViews[indexFull];
                     mCurrentFocusView.animate()
-                            .scaleX(scale)
-                            .scaleY(scale)
-                            .setInterpolator(LeanbackKeyboardContainer.sMovementInterpolator)
-                            .setDuration(mClickAnimDur)
-                            .start();
+                                     .scaleX(scale)
+                                     .scaleY(scale)
+                                     .setInterpolator(LeanbackKeyboardContainer.sMovementInterpolator)
+                                     .setDuration(mClickAnimDur)
+                                     .start();
                 }
 
                 mFocusIndex = indexFull;
@@ -614,12 +597,11 @@ public class LeanbackKeyboardView extends FrameLayout {
 
     /**
      * Set keyboard shift sate
-     *
      * @param state one of the
-     *              {@link LeanbackKeyboardView#SHIFT_ON SHIFT_ON},
-     *              {@link LeanbackKeyboardView#SHIFT_OFF SHIFT_OFF},
-     *              {@link LeanbackKeyboardView#SHIFT_LOCKED SHIFT_LOCKED}
-     *              constants
+     * {@link LeanbackKeyboardView#SHIFT_ON SHIFT_ON},
+     * {@link LeanbackKeyboardView#SHIFT_OFF SHIFT_OFF},
+     * {@link LeanbackKeyboardView#SHIFT_LOCKED SHIFT_LOCKED}
+     * constants
      */
     public void setShiftState(int state) {
         if (mShiftState != state) {
